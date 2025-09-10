@@ -52,6 +52,73 @@ const fillOrder = (orderId:string,price:number,quantity:number,side:'buy' | 'sel
         }
     }
 
+    if(side === 'buy'){
+        const sortedAsk = orderbook.asks.sort()
+        sortedAsk.forEach(o=>{
+            if(o.price <= price && quantity> 0){
+                const filledQuantity = Math.min(o.quantity,quantity)
+                o.quantity -= filledQuantity
+                BookWithQuantity.asks[o.price] = (BookWithQuantity.asks[o.price] || 0) - filledQuantity
+                fills.push({
+                    price:o.price,
+                    qty:filledQuantity,
+                    tradeId:GLOBAL_TRADE_ID
+                })
+                executedQty += filledQuantity
+                quantity -= filledQuantity
+                if(o.quantity === 0 ){
+                    orderbook.asks.slice(orderbook.asks.indexOf(o),1)
+                }
+                if(BookWithQuantity.asks[price] === 0){
+                    delete BookWithQuantity.asks[price]
+                }
+            }
+        })
+
+        if(quantity !== 0){
+            orderbook.bids.push({
+                price,
+                quantity: quantity- executedQty,
+                side:'bid',
+                orderId
+            })
+        }
+    }
+    else {
+        orderbook.bids.forEach(o=>{
+            if(o.price >= price && quantity > 0){
+                const filledQuantity = Math.min(o.quantity, quantity)
+                o.quantity -= filledQuantity
+                BookWithQuantity.bids[price] = (BookWithQuantity.bids[price] || 0) - filledQuantity
+                fills.push({
+                    price:o.price,
+                    qty:filledQuantity,
+                    tradeId:GLOBAL_TRADE_ID
+                })
+                executedQty += filledQuantity
+                quantity -= filledQuantity
+                if(o.quantity === 0){
+                    orderbook.bids.slice(orderbook.bids.indexOf(o),1)
+                }
+                if(BookWithQuantity.bids[price] === 0){
+                    delete BookWithQuantity.bids[price]
+                }
+
+            }
+        })
+
+        if(quantity !==0){
+            orderbook.asks.push({
+                price,
+                quantity:quantity,
+                side:'ask',
+                orderId
+
+            })
+            BookWithQuantity.asks[price] = (BookWithQuantity.asks[price] || 0) + (quantity)
+        }
+    }
+
     return {
         status:'accepted',
         executedQty,
@@ -62,6 +129,20 @@ const fillOrder = (orderId:string,price:number,quantity:number,side:'buy' | 'sel
 
 const getFillAmount = (price:number,quantity:number,side:'buy'| 'sell'):number =>{
     let filled = 0
+    if(side === 'buy'){
+        orderbook.asks.forEach(o => {
+            if(o.price <price){
+                filled += Math.min(o.quantity, quantity)
+            }
+        })
+    }
+    else {
+        orderbook.bids.forEach(o=>{
+            if(o.price>price){
+                filled += Math.min(o.quantity,quantity)
+            }
+        })
+    }
     return filled
 }
 

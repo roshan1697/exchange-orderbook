@@ -16,11 +16,6 @@ interface OrderBook {
     bids:Bid[];
     asks:Ask[];
 }
-export const orderbook:OrderBook = {
-    bids: [],
-    asks: []
-}
-
 
 interface BookWithQuantity {
     bids: {
@@ -30,6 +25,14 @@ interface BookWithQuantity {
         [price:number]:number
     };
 }
+
+export const orderbook:OrderBook = {
+    bids: [],
+    asks: []
+}
+
+
+
 
 export const BookWithQuantity:BookWithQuantity = {
     bids:{},
